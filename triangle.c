@@ -25,15 +25,20 @@ int pressed = 0;
 int currentStage = 0;
 int sequenceElapsedTime = 0;
 char *message;
+char *letter;
 int c=0;
 
 void (*render_fct[2])();
 S2D_Image *img;
+S2D_Image *scan;
+S2D_Image *MissLance;
+S2D_Image *MissLanched;
 S2D_Text *txtTop;
 S2D_Text *txtTop2;
 S2D_Text *txtBot;
 S2D_Text *txtBot2;
 S2D_Sound *snd;
+S2D_Text *txt;
 
 static const int color[5][4] = {
  /* R    G    B    Button */
@@ -49,6 +54,24 @@ static int randColor[MAX_STAGES];
 
 
 S2D_Window *window;
+
+void renderVerticalMessage(int x, int y, char *message)
+{
+    int i=0;
+    
+    txt->x = x;
+    txt->y = y;
+        
+    while (message[i] != '\0')
+    {
+        letter[0] = message[i++];
+        S2D_SetText(txt, letter);
+        S2D_DrawText(txt);
+        txt->y = txt->y + 35;
+
+    }
+    
+}
 
 void calcRandColor()
 {
@@ -277,13 +300,55 @@ void render() {
             }
         }
     }
+                  S2D_DrawTriangle(
+                    320,  240, 0, 0.7, 0, 1,
+                    320 + (220 * cos((i%360) * 3.14159 / 180)), 240 + (220 * sin((i%360) * 3.14159 / 180)), 0, 0.7, 0, 1,
+                    320 + (220 * cos((i%360) * 3.14159 / 180)), 245 + (220 * sin((i%360) * 3.14159 / 180)), 0, 0.7, 0, 1);
+ 
+                  S2D_DrawTriangle(
+                    220, 239, 0, 0.7, 0, 1,
+                    420, 239, 0, 0.7, 0, 1,
+                    420, 241, 0, 0.7, 0, 1);
+                  S2D_DrawTriangle(
+                    220, 239, 0, 0.7, 0, 1,
+                    420, 241, 0, 0.7, 0, 1,
+                    220, 241, 0, 0.7, 0, 1);
+
+                  S2D_DrawTriangle(
+                    319, 140, 0, 0.7, 0, 1,
+                    319, 340, 0, 0.7, 0, 1,
+                    321, 340, 0, 0.7, 0, 1);
+                  S2D_DrawTriangle(
+                    319, 140, 0, 0.7, 0, 1,
+                    321, 340, 0, 0.7, 0, 1,
+                    321, 140, 0, 0.7, 0, 1);
+                    
+  S2D_DrawImage(scan);
+
   S2D_DrawImage(img);
+
+  MissLance->y = i;
+  
+  S2D_DrawImage(MissLance);
+  
+  MissLance->y = j;
+  
+  S2D_DrawImage(MissLance);
+
+  MissLanched->y = i;
+  
+  S2D_DrawImage(MissLanched);
+ 
+  MissLanched->y = j;
+  
+  S2D_DrawImage(MissLanched);
+ 
   if (missionCompleted == false)
     {
-     	if (i==640)
+     	if (i==480)
         {
             i = 0;
-            j = -640;
+            j = -480;
         }
 	  
         txtTop->x = i++;
@@ -291,12 +356,17 @@ void render() {
 
         txtBot->x = i++;
         txtBot2->x = j++;
+        
+        //renderVerticalMessage(20, i, (char *)txtTop->msg);
+        //renderVerticalMessage(20, j, (char *)txtTop2->msg);
+        //renderVerticalMessage(620, i, (char *)txtBot->msg);
+        //renderVerticalMessage(620, j, (char *)txtBot2->msg);
 
-        S2D_DrawText(txtTop);
-        S2D_DrawText(txtTop2);
+        //S2D_DrawText(txtTop);
+        //S2D_DrawText(txtTop2);
 
-        S2D_DrawText(txtBot);
-        S2D_DrawText(txtBot2);
+        //S2D_DrawText(txtBot);
+        //S2D_DrawText(txtBot2);
     }
     else
     {
@@ -385,22 +455,52 @@ int main()
     message = (char*) malloc(100 * sizeof(char));
 
     render_fct[0] = render;
+
+
+    letter = (char*) malloc(2 * sizeof(char));
+    sprintf(letter, " ");
+    
+    txt = S2D_CreateText("Alien-Encounters-Regular.ttf", "", 40);
+
     window = S2D_CreateWindow("Hello Triangle", 640, 480, NULL, render_fct[0], 0);
 
     //img = S2D_CreateImage("old-metal-green-military-background-rivets-armor-84791421.jpg");
-    img = S2D_CreateImage("Radar.png");
-    
-  
-    img->x = 0;
+    //img = S2D_CreateImage("Radar.png");
+    img = S2D_CreateImage("Radar2Trans.png");
+    scan = S2D_CreateImage("aiguillePPReverse.png");    
+    MissLance = S2D_CreateImage("MissileLance.png");    
+    MissLanched = S2D_CreateImage("MissileLaunched.png");    
+
+    img->x = 70;
     img->y = 0;
 
-    img->width  = 640;
+    img->width  = 500;
     img->height = 480;
+
+    MissLance->x = 0;
+    MissLance->y = 0;
+
+    MissLance->width  = 80;
+    MissLance->height = 380;
+    
+    MissLanched->x = 550;
+    MissLanched->y = 0;
+
+    MissLanched->width  = 90;
+    MissLanched->height = 450;    
+    
+    scan->x = 80;
+    scan->y = 240;
+
+    scan->width  = 250;
+    scan->height = 250;
 
     txtTop = S2D_CreateText("Alien-Encounters-Regular.ttf", "Missile Lance", 40);
     txtTop2 = S2D_CreateText("Alien-Encounters-Regular.ttf", "Missile Lance", 40);
     txtBot = S2D_CreateText("Alien-Encounters-Regular.ttf", "Missile Launched", 40);
     txtBot2 = S2D_CreateText("Alien-Encounters-Regular.ttf", "Missile Launched", 40);
+//S2D_RotateText(txtTop, 90, 0);
+//1txtTop->rotate = 90;
 
     txtTop->y = 0;
     txtTop2->y = 0;
@@ -427,19 +527,29 @@ int main()
     txtBot2->color.b = 0.0;
     txtBot2->color.a = 1.0;    
 
+    txt->color.r = 0.0;
+    txt->color.g = 0.8;
+    txt->color.b = 0.0;
+    txt->color.a = 1.0;
+
     snd = S2D_CreateSound("NFF-success.wav");
 
-    window->on_key        = on_key;
+    window->on_key = on_key;
 
     S2D_Show(window);
+    S2D_FreeImage(scan);  
     S2D_FreeImage(img);  
-
+    S2D_FreeImage(MissLance);
+    
     free(message);
       
     S2D_FreeText(txtTop);
     S2D_FreeText(txtTop2);
     S2D_FreeText(txtBot);
     S2D_FreeText(txtBot2);  
+
+    free(letter);
+    S2D_FreeText(txt);
 
     S2D_FreeSound(snd);  
   
