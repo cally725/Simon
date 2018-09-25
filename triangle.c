@@ -16,6 +16,7 @@ bool missionCompleted = false;
 int i = 0;
 int k = 0;
 int j = -640;
+int angle;
 int MaxStage = 1;
 int seed=0;
 int time = 0;
@@ -100,6 +101,7 @@ void resetStage()
     S2D_SetText(txtBot2, message);
     S2D_PlaySound(snd);
     i = 0;
+    angle = 0;
     j = -640;  
     txtTop->x = i++;
     txtTop2->x = j++;
@@ -137,6 +139,7 @@ void compareSequence(int aColor)
             S2D_SetText(txtBot2, message);
             S2D_PlaySound(snd);
             i = 0;
+            angle = 0;
             j = -640;  
             txtTop->x = i++;
             txtTop2->x = j++;
@@ -246,7 +249,7 @@ void render() {
     if (currentStage != MaxStage)
     {
         currentStage = MaxStage;
-        for (int i = 0; i < 10000000; i++)
+        for (int wait = 0; wait < 10000000; wait++)
             digitalRead(0);
     }
     checkColorButtons();
@@ -300,10 +303,10 @@ void render() {
             }
         }
     }
-                  S2D_DrawTriangle(
-                    320,  240, 0, 0.7, 0, 1,
-                    320 + (220 * cos((i%360) * 3.14159 / 180)), 240 + (220 * sin((i%360) * 3.14159 / 180)), 0, 0.7, 0, 1,
-                    320 + (220 * cos((i%360) * 3.14159 / 180)), 245 + (220 * sin((i%360) * 3.14159 / 180)), 0, 0.7, 0, 1);
+               //   S2D_DrawTriangle(
+               //     320,  240, 0, 0.7, 0, 1,
+               //     320 + (220 * cos((i%360) * 3.14159 / 180)), 240 + (220 * sin((i%360) * 3.14159 / 180)), 0, 0.7, 0, 1,
+               //     320 + (220 * cos((i%360) * 3.14159 / 180)), 245 + (220 * sin((i%360) * 3.14159 / 180)), 0, 0.7, 0, 1);
  
                   S2D_DrawTriangle(
                     220, 239, 0, 0.7, 0, 1,
@@ -323,6 +326,7 @@ void render() {
                     321, 340, 0, 0.7, 0, 1,
                     321, 140, 0, 0.7, 0, 1);
                     
+  S2D_RotateImage(scan, (angle++%360), S2D_TOP_RIGHT);
   S2D_DrawImage(scan);
 
   S2D_DrawImage(img);
@@ -467,7 +471,8 @@ int main()
     //img = S2D_CreateImage("old-metal-green-military-background-rivets-armor-84791421.jpg");
     //img = S2D_CreateImage("Radar.png");
     img = S2D_CreateImage("Radar2Trans.png");
-    scan = S2D_CreateImage("aiguillePPReverse.png");    
+    //scan = S2D_CreateImage("aiguillePPReverse.png");    
+    scan = S2D_CreateImage("aiguillePPSuperSmall.png");    
     MissLance = S2D_CreateImage("MissileLance.png");    
     MissLanched = S2D_CreateImage("MissileLaunched.png");    
 
@@ -489,11 +494,11 @@ int main()
     MissLanched->width  = 90;
     MissLanched->height = 450;    
     
-    scan->x = 80;
+    scan->x = 220;
     scan->y = 240;
 
-    scan->width  = 250;
-    scan->height = 250;
+    scan->width  = 100;
+    scan->height = 150;
 
     txtTop = S2D_CreateText("Alien-Encounters-Regular.ttf", "Missile Lance", 40);
     txtTop2 = S2D_CreateText("Alien-Encounters-Regular.ttf", "Missile Lance", 40);
