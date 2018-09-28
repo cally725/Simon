@@ -1,7 +1,7 @@
 #include <simple2d.h>
 #include <wiringPi.h>
 
-#define MAX_STAGES 10
+#define MAX_STAGES 11
 #define MAX_COLOR 5
 #define CLEAR_SCREEN_DELAY 100
 #define DISPLAY_TIME 40
@@ -16,7 +16,10 @@ bool missionCompleted = false;
 int i = 0;
 int k = 0;
 int j = -640;
-int angle;
+int angle = 0;
+int voiceOffset = 300;
+int barLength = 0;
+int offset = 1;
 int MaxStage = 1;
 int seed=0;
 int time = 0;
@@ -32,8 +35,12 @@ int c=0;
 void (*render_fct[2])();
 S2D_Image *img;
 S2D_Image *scan;
-S2D_Image *MissLance;
-S2D_Image *MissLanched;
+S2D_Image *Missile;
+S2D_Image *Launched;
+S2D_Image *Lance;
+S2D_Image *Deactivated;
+S2D_Image *Desactive;
+S2D_Image *voice;
 S2D_Text *txtTop;
 S2D_Text *txtTop2;
 S2D_Text *txtBot;
@@ -53,6 +60,37 @@ static const int color[5][4] = {
 
 static int randColor[MAX_STAGES];
 
+struct BAR
+{
+    int x;
+    int y;
+    int width;
+    int height;
+    int actual;
+    int increment;
+    float seed;
+    int orientation; // 1 vertical, 0 horizontal
+    
+};
+
+struct BAR h0 =  {90, 32, 5, 10, 0, 1, 20.0,  0};
+struct BAR h1 =  {90, 39, 5, 50, 0, 1, 100.0, 0};
+struct BAR h2 =  {90, 46, 5, 5, 0, 1, 10.0,  0};
+struct BAR h3 =  {90, 53, 5, 40, 0, 1, 80.0,  0};
+struct BAR h4 =  {90, 60, 5, 35, 0, 1, 76.0,  0};
+struct BAR h5 =  {90, 67, 5, 15, 0, 1, 33.0,  0};
+
+struct BAR v0 =  {470, 460, 5, 5, 0, 1, 10.0,  1};
+struct BAR v1 =  {477, 460, 5, 20, 0, 1, 40.0,  1};
+struct BAR v2 =  {484, 460, 5, 50, 0, 1, 100.0, 1};
+struct BAR v3 =  {491, 460, 5, 25, 0, 1, 50.0,  1};
+struct BAR v4 =  {498, 460, 5, 45, 0, 1, 90.0,  1};
+struct BAR v5 =  {505, 460, 5, 12, 0, 1, 25.0,  1};
+struct BAR v6 =  {512, 460, 5, 25, 0, 1, 45.0,  1};
+struct BAR v7 =  {519, 460, 5, 43, 0, 1, 85.0,  1};
+struct BAR v8 =  {526, 460, 5, 28, 0, 1, 55.0,  1};
+struct BAR v9 =  {533, 460, 5, 3, 0, 1, 5.0,   1};
+struct BAR v10 = {540, 460, 5, 35, 0, 1, 70.0,  1};
 
 S2D_Window *window;
 
@@ -221,6 +259,58 @@ void checkColorButtons()
     }  
 }
 
+void RenderBar(struct BAR *bar, int off)
+{
+
+        
+   int length = (int)((float) bar->actual * ((float) MaxStage / (float) MAX_STAGES));
+
+   if (bar->orientation == 0)
+    {
+        
+        S2D_DrawTriangle(
+            bar->x,          bar->y,               0, 0.7, 0, 1,
+            bar->x + length, bar->y,               0, 0.7, 0, 1,
+            bar->x + length, bar->y + bar->width,  0, 0.7, 0, 1);
+        S2D_DrawTriangle(
+            bar->x,          bar->y,               0, 0.7, 0, 1,
+            bar->x + length, bar->y + bar->width,  0, 0.7, 0, 1,
+            bar->x,          bar->y + bar->width,  0, 0.7, 0, 1);  
+    }
+    else
+    {    
+        S2D_DrawTriangle(
+            bar->x,               bar->y,          0, 0.7, 0, 1,
+            bar->x + bar->width,  bar->y,          0, 0.7, 0, 1,
+            bar->x + bar->width,  bar->y - length, 0, 0.7, 0, 1);
+        S2D_DrawTriangle(
+            bar->x,               bar->y,          0, 0.7, 0, 1,
+            bar->x + bar->width,  bar->y - length, 0, 0.7, 0, 1,
+            bar->x,               bar->y - length, 0, 0.7, 0, 1);
+    }          
+    
+   if (bar->actual >= bar->height)
+        bar->increment = -1;
+   if (bar->actual <= 0)
+   {
+        bar->increment = 1;
+        bar->height = rand() % 50;
+   }
+   bar->actual = bar->actual + bar->increment;
+}
+
+void RenderVoice(int *offset)
+{
+    voice->x = *offset;
+    S2D_DrawImage(voice);
+    voice->x = *offset +100;
+    S2D_DrawImage(voice);
+    voice->x = *offset +200;
+    S2D_DrawImage(voice);
+    if ((*offset)++ == 400)
+        *offset = 300;
+}
+
 void clearScreen()
 {
     S2D_DrawTriangle(
@@ -329,30 +419,83 @@ void render() {
   S2D_RotateImage(scan, (angle++%360), S2D_TOP_RIGHT);
   S2D_DrawImage(scan);
 
+  RenderVoice(&voiceOffset);
+
+  
+                    
+                  S2D_DrawTriangle(
+                    550, 0, 0, 0, 0, 1,
+                    640, 0, 0, 0, 0, 1,
+                    640, 100, 0, 0, 0, 1);
+                  S2D_DrawTriangle(
+                    550, 0, 0, 0, 0, 1,
+                    640, 100, 0, 0, 0, 1,
+                    550, 100, 0, 0, 0, 1);   
+
+
   S2D_DrawImage(img);
+  
+  RenderBar(&h0, barLength);
+  RenderBar(&h1, barLength);
+  RenderBar(&h2, barLength);
+  RenderBar(&h3, barLength);
+  RenderBar(&h4, barLength);
+  RenderBar(&h5, barLength);
+    
+  RenderBar(&v0, barLength);
+  RenderBar(&v1, barLength);
+  RenderBar(&v2, barLength);
+  RenderBar(&v3, barLength);
+  RenderBar(&v4, barLength);
+  RenderBar(&v5, barLength);
+  RenderBar(&v6, barLength);
+  RenderBar(&v7, barLength);
+  RenderBar(&v8, barLength);
+  RenderBar(&v9, barLength);
+  RenderBar(&v10,barLength);
+  
+  S2D_DrawLine(78 + MaxStage * 7, 430, 186, 446, 1, 0, 0.7, 0, 1, 0, 0.7, 0, 1, 0, 0.7, 0, 1, 0, 0.7, 0, 1);
+  S2D_DrawTriangle(75 + MaxStage * 7, 428, 0, 0.7, 0, 1,
+             81 + MaxStage * 7, 428, 0, 0.7, 0, 1,
+             78 + MaxStage * 7, 434, 0, 0.7, 0, 1);
+  S2D_DrawTriangle(78 + MaxStage * 7, 426, 0, 0.7, 0, 1,
+             81 + MaxStage * 7, 432, 0, 0.7, 0, 1,
+             75 + MaxStage * 7, 432, 0, 0.7, 0, 1);
 
-  MissLance->y = i;
+  Missile->x = 25;
+  Missile->y = i;
+  S2D_DrawImage(Missile);
   
-  S2D_DrawImage(MissLance);
-  
-  MissLance->y = j;
-  
-  S2D_DrawImage(MissLance);
+  Lance->y = i + 270;
+  S2D_DrawImage(Lance);
 
-  MissLanched->y = i;
-  
-  S2D_DrawImage(MissLanched);
+  Missile->x = 580;
+  Missile->y = i;
+  S2D_DrawImage(Missile);
  
-  MissLanched->y = j;
+  Launched->y = i + 270;
+  S2D_DrawImage(Launched);
+
+  Missile->x = 25;
+  Missile->y = j;
+  S2D_DrawImage(Missile);
   
-  S2D_DrawImage(MissLanched);
+  Lance->y = j + 270;
+  S2D_DrawImage(Lance);
+
+  Missile->x = 580;
+  Missile->y = j;
+  S2D_DrawImage(Missile);
  
+  Launched->y = j + 270;
+  S2D_DrawImage(Launched);
+  
   if (missionCompleted == false)
     {
-     	if (i==480)
+     	if (i==640)
         {
             i = 0;
-            j = -480;
+            j = -640;
         }
 	  
         txtTop->x = i++;
@@ -398,25 +541,25 @@ void on_key(S2D_Event e)
         if (strcmp(e.key, "Escape") == 0) S2D_Close(window);
         if (strcmp(e.key, "Return") == 0) 
         {
-            c++;
-                sprintf(message, "toto", MaxStage);
-            message[0] = c;
-    S2D_SetText(txtTop, message);
-    S2D_SetText(txtTop2, message);
-    S2D_SetText(txtBot, message);
-    S2D_SetText(txtBot2, message);
+            //c++;
+             //   sprintf(message, "toto", MaxStage);
+            //message[0] = c;
+    //S2D_SetText(txtTop, message);
+    //S2D_SetText(txtTop2, message);
+    //S2D_SetText(txtBot, message);
+    //S2D_SetText(txtBot2, message);
             //clearScreenDelay = 50;
             //printf("clearScreen = %d \n", clearScreen);
-            //MaxStage++;
-            //if (MaxStage = MAX_STAGES)
-           // {
-            //    missionCompleted = true;
-            //    S2D_SetText(txtTop, "Mission Complete!");
-            //    S2D_SetText(txtTop2, "Mission Complete!");
-            //    S2D_SetText(txtBot, "Mission Completed!");
-            //    S2D_SetText(txtBot2, "Mission Completed!");
-            //    S2D_PlaySound(snd);
-           // }
+            MaxStage++;
+            if (MaxStage == MAX_STAGES)
+            {
+                missionCompleted = true;
+                S2D_SetText(txtTop, "Mission Complete!");
+                S2D_SetText(txtTop2, "Mission Complete!");
+                S2D_SetText(txtBot, "Mission Completed!");
+                S2D_SetText(txtBot2, "Mission Completed!");
+                S2D_PlaySound(snd);
+            }
            // else
            // {
            //     clearScreenDelay=CLEAR_SCREEN_DELAY;
@@ -470,35 +613,56 @@ int main()
 
     //img = S2D_CreateImage("old-metal-green-military-background-rivets-armor-84791421.jpg");
     //img = S2D_CreateImage("Radar.png");
-    img = S2D_CreateImage("Radar2Trans.png");
+    img = S2D_CreateImage("Radar2TransVide.png");
     //scan = S2D_CreateImage("aiguillePPReverse.png");    
     scan = S2D_CreateImage("aiguillePPSuperSmall.png");    
-    MissLance = S2D_CreateImage("MissileLance.png");    
-    MissLanched = S2D_CreateImage("MissileLaunched.png");    
+    Missile = S2D_CreateImage("Missile.png");    
+    Launched = S2D_CreateImage("Launched.png");    
+    Lance = S2D_CreateImage("Lance.png");    
+    Deactivated = S2D_CreateImage("Deactivated.png");    
+    Desactive = S2D_CreateImage("Desactive.png");    
+    voice = S2D_CreateImage("Voice.png");    
 
     img->x = 70;
     img->y = 0;
-
     img->width  = 500;
     img->height = 480;
 
-    MissLance->x = 0;
-    MissLance->y = 0;
-
-    MissLance->width  = 80;
-    MissLance->height = 380;
+    Missile->x = 25;
+    Missile->y = 0;
+    Missile->width  = 30;
+    Missile->height = 250;
     
-    MissLanched->x = 550;
-    MissLanched->y = 0;
+    Lance->x = 25;
+    Lance->y = 0;
+    Lance->width  = 30;
+    Lance->height = 200;    
 
-    MissLanched->width  = 90;
-    MissLanched->height = 450;    
+    Launched->x = 580;
+    Launched->y = 0;
+    Launched->width  = 30;
+    Launched->height = 300;    
+
+    Desactive->x = 580;
+    Desactive->y = 0;
+    Desactive->width  = 30;
+    Desactive->height = 300;    
+
+    Deactivated->x = 580;
+    Deactivated->y = 0;
+    Deactivated->width  = 30;
+    Deactivated->height = 300;    
     
     scan->x = 220;
     scan->y = 240;
-
     scan->width  = 100;
-    scan->height = 150;
+    scan->height = 125;
+    
+    voice->width  = 100;
+    voice->height = 30;
+    voice->x = 500;
+    voice->y = 23;
+
 
     txtTop = S2D_CreateText("Alien-Encounters-Regular.ttf", "Missile Lance", 40);
     txtTop2 = S2D_CreateText("Alien-Encounters-Regular.ttf", "Missile Lance", 40);
@@ -544,8 +708,13 @@ int main()
     S2D_Show(window);
     S2D_FreeImage(scan);  
     S2D_FreeImage(img);  
-    S2D_FreeImage(MissLance);
-    
+    S2D_FreeImage(Missile);
+    S2D_FreeImage(Lance);
+    S2D_FreeImage(Launched);
+    S2D_FreeImage(Deactivated);
+    S2D_FreeImage(Desactive);
+    S2D_FreeImage(voice);
+
     free(message);
       
     S2D_FreeText(txtTop);
